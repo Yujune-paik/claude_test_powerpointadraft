@@ -1,0 +1,519 @@
+/* ===== Global ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* ===== App Layout ===== */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: #1a1a2e;
+  color: white;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.app-header h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.api-key-input input {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  width: 280px;
+}
+
+.api-key-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  padding: 16px;
+}
+
+/* ===== Error Bar ===== */
+.error-bar {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.error-bar button {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* ===== Upload Area ===== */
+.upload-area {
+  margin: auto;
+  width: 100%;
+  max-width: 500px;
+  border: 3px dashed #ccc;
+  border-radius: 16px;
+  padding: 60px 40px;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.upload-area.dragging {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.upload-area p {
+  color: #666;
+  margin: 8px 0;
+}
+
+.upload-sub {
+  font-size: 13px;
+  color: #999 !important;
+}
+
+.upload-button {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 24px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.2s;
+}
+
+.upload-button:hover {
+  background: #2563eb;
+}
+
+.upload-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===== Spinner ===== */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Presentation View ===== */
+.presentation-view {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  height: calc(100vh - 120px);
+}
+
+.left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.right-panel {
+  width: 360px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+/* ===== Slide Viewer ===== */
+.slide-viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.slide-main {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.slide-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.slide-placeholder {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.slide-text-content {
+  font-size: 18px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.slide-number {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* ===== Slide Navigation ===== */
+.slide-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.nav-button {
+  padding: 8px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.nav-button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.nav-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.recording-badge {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 14px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ===== Thumbnails ===== */
+.slide-thumbnails {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.thumbnail {
+  width: 48px;
+  height: 36px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+  background: white;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.thumbnail.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.thumbnail.has-note {
+  border-color: #22c55e;
+}
+
+.thumbnail.processing {
+  border-color: #f59e0b;
+}
+
+.thumbnail-number {
+  font-weight: 500;
+  color: #666;
+}
+
+.thumbnail-check {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #22c55e;
+  color: white;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumbnail-spinner {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 14px;
+  animation: spin 1s linear infinite;
+  color: #f59e0b;
+}
+
+/* ===== Recording Controls ===== */
+.recording-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-record,
+.btn-stop,
+.btn-export,
+.btn-reset {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-record {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-record:hover {
+  background: #b91c1c;
+}
+
+.btn-stop {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-stop:hover {
+  background: #4b5563;
+}
+
+.btn-export {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-export:hover {
+  background: #16a34a;
+}
+
+.btn-reset {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #666;
+}
+
+.btn-reset:hover {
+  background: #f3f4f6;
+}
+
+/* ===== Notes Panel ===== */
+.notes-panel {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.notes-header h3 {
+  font-size: 16px;
+}
+
+.notes-progress {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.notes-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.notes-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 0;
+  color: #6b7280;
+}
+
+.note-item {
+  margin-bottom: 12px;
+}
+
+.note-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.note-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+.note-text.transcript {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.notes-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #9ca3af;
+}
+
+.notes-hint {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.notes-all {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.notes-all h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: #6b7280;
+}
+
+.note-summary {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: #f9fafb;
+}
+
+.note-summary.current {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.note-summary-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.note-summary-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+.note-summary-empty {
+  font-size: 13px;
+  color: #d1d5db;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .presentation-view {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .right-panel {
+    width: 100%;
+  }
+
+  .api-key-input input {
+    width: 180px;
+  }
+}
