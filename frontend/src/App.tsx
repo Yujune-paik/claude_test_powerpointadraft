@@ -5,6 +5,7 @@ import { NotesPanel } from "./components/NotesPanel";
 import { useAudioRecorder } from "./hooks/useAudioRecorder";
 import type { SlideData } from "./services/api";
 import {
+  authenticate,
   uploadPptx,
   transcribeAudio,
   generateNotes,
@@ -13,7 +14,11 @@ import {
 import "./App.css";
 
 function App() {
-  const [apiKey, setApiKey] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [pptxFile, setPptxFile] = useState<File | null>(null);
   const [slides, setSlides] = useState<SlideData[]>([]);
@@ -31,6 +36,23 @@ function App() {
 
   const { isRecording, startRecording, stopRecording, splitRecording } =
     useAudioRecorder();
+
+  const handleLogin = useCallback(async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const result = await authenticate(password);
+      if (result.ok) {
+        setIsAuthenticated(true);
+      } else {
+        setAuthError(result.error || "パスワードが違います");
+      }
+    } catch (e) {
+      setAuthError(`認証に失敗しました: ${e}`);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [password]);
 
   const handleUpload = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -52,22 +74,16 @@ function App() {
 
   const processSlideAudio = useCallback(
     async (audioBlob: Blob, slideIndex: number) => {
-      if (!apiKey) return;
-
       setProcessingSlides((prev) => new Set(prev).add(slideIndex));
       try {
-        // Step 1: Transcribe
         const { transcript } = await transcribeAudio(
           audioBlob,
-          sessionId || "",
-          slideIndex,
-          apiKey
+          slideIndex
         );
         setTranscripts((prev) => ({ ...prev, [slideIndex]: transcript }));
 
-        // Step 2: Generate note
         const slideText = slides[slideIndex]?.text || "";
-        const { note } = await generateNotes(slideText, transcript, apiKey);
+        const { note } = await generateNotes(slideText, transcript);
         setNotes((prev) => ({ ...prev, [slideIndex]: note }));
       } catch (e) {
         setError(`スライド${slideIndex + 1}の処理に失敗しました: ${e}`);
@@ -79,19 +95,13 @@ function App() {
         });
       }
     },
-    [apiKey, slides, sessionId]
+    [slides]
   );
 
   const handleNavigate = useCallback(
     async (newIndex: number) => {
       if (newIndex < 0 || newIndex >= slides.length) return;
 
-      if (!apiKey) {
-        setError("OpenAI APIキーを入力してください");
-        return;
-      }
-
-      // If recording, split audio for current slide and process it
       if (isRecording && recordingSlideIndex !== null) {
         const blob = await splitRecording();
         if (blob) {
@@ -99,7 +109,6 @@ function App() {
         }
         setRecordingSlideIndex(newIndex);
       } else {
-        // Not recording yet → auto-start recording for the new slide
         try {
           await startRecording();
           setRecordingSlideIndex(newIndex);
@@ -113,7 +122,6 @@ function App() {
     },
     [
       slides.length,
-      apiKey,
       isRecording,
       recordingSlideIndex,
       splitRecording,
@@ -131,14 +139,12 @@ function App() {
   }, [stopRecording, recordingSlideIndex, processSlideAudio]);
 
   const handleRerecord = useCallback(async () => {
-    // Stop current recording (discard), then restart for current slide
     if (isRecording) {
-      await stopRecording(); // discard
+      await stopRecording();
     }
     try {
       await startRecording();
       setRecordingSlideIndex(currentIndex);
-      // Clear existing transcript/note for this slide
       setTranscripts((prev) => {
         const next = { ...prev };
         delete next[currentIndex];
@@ -157,7 +163,6 @@ function App() {
 
   const handleExport = useCallback(async () => {
     if (!pptxFile) return;
-    // If still recording, stop and process the last slide first
     if (isRecording && recordingSlideIndex !== null) {
       const blob = await stopRecording();
       if (blob) {
@@ -178,18 +183,41 @@ function App() {
     }
   }, [pptxFile, notes, isRecording, recordingSlideIndex, stopRecording, processSlideAudio]);
 
+  // Password gate
+  if (!isAuthenticated) {
+    return (
+      <div className="app">
+        <div className="login-screen">
+          <h1>Auto Speaker Notes</h1>
+          <p>パスワードを入力してください</p>
+          <form
+            className="login-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleLogin();
+            }}
+          >
+            <input
+              type="password"
+              placeholder="パスワード"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <button type="submit" disabled={authLoading || !password}>
+              {authLoading ? "確認中..." : "ログイン"}
+            </button>
+          </form>
+          {authError && <p className="login-error">{authError}</p>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>Auto Speaker Notes</h1>
-        <div className="api-key-input">
-          <input
-            type="password"
-            placeholder="OpenAI APIキー"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-        </div>
       </header>
 
       {error && (

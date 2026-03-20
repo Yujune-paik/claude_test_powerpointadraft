@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -27,16 +28,19 @@ SYSTEM_PROMPT = """あなたはプレゼンテーションのスピーカーノ�
 class GenerateRequest(BaseModel):
     slide_text: str
     transcript: str
-    api_key: str
     model: str = "gpt-4o"
 
 
 @app.post("/api/generate-notes")
 async def generate_notes(request: GenerateRequest):
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
+
     if not request.transcript.strip():
         raise HTTPException(status_code=400, detail="Transcript is empty")
 
-    client = OpenAI(api_key=request.api_key)
+    client = OpenAI(api_key=api_key)
 
     user_message = f"""## スライドの内容
 {request.slide_text}

@@ -21,6 +21,16 @@ export interface GenerateNotesResponse {
   note: string;
 }
 
+export async function authenticate(password: string): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(`${API_BASE}/auth`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function uploadPptx(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
@@ -34,15 +44,12 @@ export async function uploadPptx(file: File): Promise<UploadResponse> {
 
 export async function transcribeAudio(
   audioBlob: Blob,
-  _sessionId: string,
   slideIndex: number,
-  apiKey: string,
   language: string = "ja"
 ): Promise<TranscribeResponse> {
   const formData = new FormData();
   formData.append("audio", audioBlob, "recording.webm");
   formData.append("slide_index", slideIndex.toString());
-  formData.append("api_key", apiKey);
   formData.append("language", language);
   const res = await fetch(`${API_BASE}/transcribe`, {
     method: "POST",
@@ -55,7 +62,6 @@ export async function transcribeAudio(
 export async function generateNotes(
   slideText: string,
   transcript: string,
-  apiKey: string,
   model: string = "gpt-4o"
 ): Promise<GenerateNotesResponse> {
   const res = await fetch(`${API_BASE}/generate-notes`, {
@@ -64,7 +70,6 @@ export async function generateNotes(
     body: JSON.stringify({
       slide_text: slideText,
       transcript: transcript,
-      api_key: apiKey,
       model: model,
     }),
   });

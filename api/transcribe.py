@@ -17,9 +17,12 @@ app.add_middleware(
 async def transcribe(
     audio: UploadFile = File(...),
     slide_index: int = Form(...),
-    api_key: str = Form(...),
     language: str = Form("ja"),
 ):
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
+
     with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
         content = await audio.read()
         tmp.write(content)
