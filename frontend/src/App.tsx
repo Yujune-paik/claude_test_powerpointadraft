@@ -15,6 +15,7 @@ import "./App.css";
 function App() {
   const [apiKey, setApiKey] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [pptxFile, setPptxFile] = useState<File | null>(null);
   const [slides, setSlides] = useState<SlideData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [notes, setNotes] = useState<Record<number, string>>({});
@@ -36,6 +37,7 @@ function App() {
     setError(null);
     try {
       const result = await uploadPptx(file);
+      setPptxFile(file);
       setSessionId(result.sessionId);
       setSlides(result.slides);
       setCurrentIndex(0);
@@ -50,14 +52,14 @@ function App() {
 
   const processSlideAudio = useCallback(
     async (audioBlob: Blob, slideIndex: number) => {
-      if (!sessionId || !apiKey) return;
+      if (!apiKey) return;
 
       setProcessingSlides((prev) => new Set(prev).add(slideIndex));
       try {
         // Step 1: Transcribe
         const { transcript } = await transcribeAudio(
           audioBlob,
-          sessionId,
+          sessionId || "",
           slideIndex,
           apiKey
         );
@@ -77,7 +79,7 @@ function App() {
         });
       }
     },
-    [sessionId, apiKey, slides]
+    [apiKey, slides, sessionId]
   );
 
   const handleStartRecording = useCallback(async () => {
@@ -127,9 +129,9 @@ function App() {
   );
 
   const handleExport = useCallback(async () => {
-    if (!sessionId) return;
+    if (!pptxFile) return;
     try {
-      const blob = await exportPptx(sessionId, notes);
+      const blob = await exportPptx(pptxFile, notes);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -139,7 +141,7 @@ function App() {
     } catch (e) {
       setError(`エクスポートに失敗しました: ${e}`);
     }
-  }, [sessionId, notes]);
+  }, [pptxFile, notes]);
 
   return (
     <div className="app">
@@ -204,6 +206,7 @@ function App() {
                   className="btn-reset"
                   onClick={() => {
                     setSessionId(null);
+                    setPptxFile(null);
                     setSlides([]);
                     setNotes({});
                     setTranscripts({});

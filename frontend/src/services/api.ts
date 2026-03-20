@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "/api";
 
 export interface SlideData {
   index: number;
@@ -34,14 +34,13 @@ export async function uploadPptx(file: File): Promise<UploadResponse> {
 
 export async function transcribeAudio(
   audioBlob: Blob,
-  sessionId: string,
+  _sessionId: string,
   slideIndex: number,
   apiKey: string,
   language: string = "ja"
 ): Promise<TranscribeResponse> {
   const formData = new FormData();
   formData.append("audio", audioBlob, "recording.webm");
-  formData.append("session_id", sessionId);
   formData.append("slide_index", slideIndex.toString());
   formData.append("api_key", apiKey);
   formData.append("language", language);
@@ -74,16 +73,15 @@ export async function generateNotes(
 }
 
 export async function exportPptx(
-  sessionId: string,
+  pptxFile: File,
   notes: Record<number, string>
 ): Promise<Blob> {
+  const formData = new FormData();
+  formData.append("file", pptxFile);
+  formData.append("notes", JSON.stringify(notes));
   const res = await fetch(`${API_BASE}/export`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      session_id: sessionId,
-      notes: notes,
-    }),
+    body: formData,
   });
   if (!res.ok) throw new Error(await res.text());
   return res.blob();

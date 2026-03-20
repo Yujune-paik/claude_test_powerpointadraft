@@ -60,7 +60,7 @@ export function SlideViewer({
       </div>
 
       <div className="slide-thumbnails">
-        {slides.map((slide, i) => (
+        {slides.map((_slide, i) => (
           <div
             key={i}
             className={`thumbnail ${i === currentIndex ? "active" : ""} ${
