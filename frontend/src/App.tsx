@@ -82,19 +82,45 @@ function App() {
     [apiKey, slides, sessionId]
   );
 
-  const handleStartRecording = useCallback(async () => {
-    if (!apiKey) {
-      setError("OpenAI APIキーを入力してください");
-      return;
-    }
-    try {
-      await startRecording();
-      setRecordingSlideIndex(currentIndex);
-      setError(null);
-    } catch (e) {
-      setError(`マイクへのアクセスに失敗しました: ${e}`);
-    }
-  }, [startRecording, currentIndex, apiKey]);
+  const handleNavigate = useCallback(
+    async (newIndex: number) => {
+      if (newIndex < 0 || newIndex >= slides.length) return;
+
+      if (!apiKey) {
+        setError("OpenAI APIキーを入力してください");
+        return;
+      }
+
+      // If recording, split audio for current slide and process it
+      if (isRecording && recordingSlideIndex !== null) {
+        const blob = await splitRecording();
+        if (blob) {
+          processSlideAudio(blob, recordingSlideIndex);
+        }
+        setRecordingSlideIndex(newIndex);
+      } else {
+        // Not recording yet → auto-start recording for the new slide
+        try {
+          await startRecording();
+          setRecordingSlideIndex(newIndex);
+          setError(null);
+        } catch (e) {
+          setError(`マイクへのアクセスに失敗しました: ${e}`);
+        }
+      }
+
+      setCurrentIndex(newIndex);
+    },
+    [
+      slides.length,
+      apiKey,
+      isRecording,
+      recordingSlideIndex,
+      splitRecording,
+      startRecording,
+      processSlideAudio,
+    ]
+  );
 
   const handleStopRecording = useCallback(async () => {
     const blob = await stopRecording();
@@ -104,32 +130,41 @@ function App() {
     setRecordingSlideIndex(null);
   }, [stopRecording, recordingSlideIndex, processSlideAudio]);
 
-  const handleNavigate = useCallback(
-    async (newIndex: number) => {
-      if (newIndex < 0 || newIndex >= slides.length) return;
-
-      // If recording, split audio for current slide and process it
-      if (isRecording && recordingSlideIndex !== null) {
-        const blob = await splitRecording();
-        if (blob) {
-          processSlideAudio(blob, recordingSlideIndex);
-        }
-        setRecordingSlideIndex(newIndex);
-      }
-
-      setCurrentIndex(newIndex);
-    },
-    [
-      slides.length,
-      isRecording,
-      recordingSlideIndex,
-      splitRecording,
-      processSlideAudio,
-    ]
-  );
+  const handleRerecord = useCallback(async () => {
+    // Stop current recording (discard), then restart for current slide
+    if (isRecording) {
+      await stopRecording(); // discard
+    }
+    try {
+      await startRecording();
+      setRecordingSlideIndex(currentIndex);
+      // Clear existing transcript/note for this slide
+      setTranscripts((prev) => {
+        const next = { ...prev };
+        delete next[currentIndex];
+        return next;
+      });
+      setNotes((prev) => {
+        const next = { ...prev };
+        delete next[currentIndex];
+        return next;
+      });
+      setError(null);
+    } catch (e) {
+      setError(`マイクへのアクセスに失敗しました: ${e}`);
+    }
+  }, [isRecording, stopRecording, startRecording, currentIndex]);
 
   const handleExport = useCallback(async () => {
     if (!pptxFile) return;
+    // If still recording, stop and process the last slide first
+    if (isRecording && recordingSlideIndex !== null) {
+      const blob = await stopRecording();
+      if (blob) {
+        await processSlideAudio(blob, recordingSlideIndex);
+      }
+      setRecordingSlideIndex(null);
+    }
     try {
       const blob = await exportPptx(pptxFile, notes);
       const url = URL.createObjectURL(blob);
@@ -141,7 +176,7 @@ function App() {
     } catch (e) {
       setError(`エクスポートに失敗しました: ${e}`);
     }
-  }, [pptxFile, notes]);
+  }, [pptxFile, notes, isRecording, recordingSlideIndex, stopRecording, processSlideAudio]);
 
   return (
     <div className="app">
@@ -180,20 +215,21 @@ function App() {
               />
 
               <div className="recording-controls">
-                {!isRecording ? (
-                  <button
-                    className="btn-record"
-                    onClick={handleStartRecording}
-                  >
-                    ● 発表開始（録音）
-                  </button>
-                ) : (
-                  <button
-                    className="btn-stop"
-                    onClick={handleStopRecording}
-                  >
-                    ■ 発表終了（録音停止）
-                  </button>
+                {isRecording && (
+                  <>
+                    <button
+                      className="btn-stop"
+                      onClick={handleStopRecording}
+                    >
+                      ■ 発表終了（録音停止）
+                    </button>
+                    <button
+                      className="btn-rerecord"
+                      onClick={handleRerecord}
+                    >
+                      ↻ このスライドを録音し直す
+                    </button>
+                  </>
                 )}
 
                 {Object.keys(notes).length > 0 && (
@@ -205,11 +241,15 @@ function App() {
                 <button
                   className="btn-reset"
                   onClick={() => {
+                    if (isRecording) {
+                      stopRecording();
+                    }
                     setSessionId(null);
                     setPptxFile(null);
                     setSlides([]);
                     setNotes({});
                     setTranscripts({});
+                    setRecordingSlideIndex(null);
                   }}
                 >
                   別のファイルを選択

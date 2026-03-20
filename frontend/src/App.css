@@ -334,7 +334,8 @@ body {
 .btn-record,
 .btn-stop,
 .btn-export,
-.btn-reset {
+.btn-reset,
+.btn-rerecord {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -360,6 +361,15 @@ body {
 
 .btn-stop:hover {
   background: #4b5563;
+}
+
+.btn-rerecord {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-rerecord:hover {
+  background: #d97706;
 }
 
 .btn-export {
