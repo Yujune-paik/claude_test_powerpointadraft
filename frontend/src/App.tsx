@@ -6,11 +6,10 @@ import { useAudioRecorder } from "./hooks/useAudioRecorder";
 import type { SlideData } from "./services/api";
 import {
   authenticate,
-  uploadPptx,
   transcribeAudio,
   generateNotes,
-  exportPptx,
 } from "./services/api";
+import { parseSlideCount, exportWithNotes } from "./services/pptx";
 import "./App.css";
 
 function App() {
@@ -58,15 +57,18 @@ function App() {
     setIsUploading(true);
     setError(null);
     try {
-      const result = await uploadPptx(file);
+      const slideCount = await parseSlideCount(file);
+      const slidesData: SlideData[] = Array.from({ length: slideCount }, (_, i) => ({
+        index: i,
+      }));
       setPptxFile(file);
-      setSessionId(result.sessionId);
-      setSlides(result.slides);
+      setSessionId("local-session");
+      setSlides(slidesData);
       setCurrentIndex(0);
       setNotes({});
       setTranscripts({});
     } catch (e) {
-      setError(`アップロードに失敗しました: ${e}`);
+      setError(`ファイルの読み込みに失敗しました: ${e}`);
     } finally {
       setIsUploading(false);
     }
@@ -82,8 +84,7 @@ function App() {
         );
         setTranscripts((prev) => ({ ...prev, [slideIndex]: transcript }));
 
-        const slideText = slides[slideIndex]?.text || "";
-        const { note } = await generateNotes(slideText, transcript);
+        const { note } = await generateNotes(transcript);
         setNotes((prev) => ({ ...prev, [slideIndex]: note }));
       } catch (e) {
         setError(`スライド${slideIndex + 1}の処理に失敗しました: ${e}`);
@@ -171,7 +172,7 @@ function App() {
       setRecordingSlideIndex(null);
     }
     try {
-      const blob = await exportPptx(pptxFile, notes);
+      const blob = await exportWithNotes(pptxFile, notes);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

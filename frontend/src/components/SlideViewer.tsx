@@ -17,25 +17,14 @@ export function SlideViewer({
   notes,
   processingSlides,
 }: SlideViewerProps) {
-  const currentSlide = slides[currentIndex];
-  const backendBase = "http://localhost:8000";
-
   return (
     <div className="slide-viewer">
       <div className="slide-main">
-        {currentSlide?.imageUrl ? (
-          <img
-            src={`${backendBase}${currentSlide.imageUrl}`}
-            alt={`Slide ${currentIndex + 1}`}
-            className="slide-image"
-          />
-        ) : (
-          <div className="slide-placeholder">
-            <div className="slide-text-content">
-              {currentSlide?.text || "（テキストなし）"}
-            </div>
+        <div className="slide-placeholder">
+          <div className="slide-number-large">
+            スライド {currentIndex + 1}
           </div>
-        )}
+        </div>
         <div className="slide-number">
           {currentIndex + 1} / {slides.length}
         </div>
