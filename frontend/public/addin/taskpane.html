@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto Speaker Notes</title>
+  <link rel="stylesheet" href="taskpane.css" />
+  <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen">
+      <h1>Auto Speaker Notes</h1>
+      <p class="subtitle">パスワードを入力してください</p>
+      <form id="login-form">
+        <input type="password" id="password-input" placeholder="パスワード" autocomplete="off" />
+        <button type="submit" id="login-btn">ログイン</button>
+      </form>
+      <p id="login-error" class="error" hidden></p>
+    </div>
+
+    <!-- Main Screen -->
+    <div id="main-screen" class="screen" hidden>
+      <h1>Auto Speaker Notes</h1>
+
+      <!-- Status -->
+      <div id="status-bar" class="status-bar">
+        <span id="status-icon" class="status-icon">⏸</span>
+        <span id="status-text">待機中</span>
+      </div>
+
+      <!-- Current Slide Info -->
+      <div id="slide-info" class="slide-info">
+        <span id="slide-label">スライド: --</span>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button id="btn-start" class="btn btn-primary">
+          🎤 リハーサル開始
+        </button>
+        <button id="btn-stop" class="btn btn-danger" hidden>
+          ■ リハーサル終了
+        </button>
+      </div>
+
+      <!-- Progress -->
+      <div id="progress-section" class="progress-section" hidden>
+        <h2>処理状況</h2>
+        <div id="progress-list" class="progress-list"></div>
+      </div>
+
+      <!-- Results Summary -->
+      <div id="results-section" class="results-section" hidden>
+        <h2>完了</h2>
+        <p id="results-summary"></p>
+      </div>
+
+      <!-- Error -->
+      <p id="main-error" class="error" hidden></p>
+    </div>
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>

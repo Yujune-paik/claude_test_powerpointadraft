@@ -8,8 +8,17 @@
       "maxDuration": 60
     }
   },
+  "headers": [
+    {
+      "source": "/addin/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/addin/(.*)", "destination": "/addin/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
